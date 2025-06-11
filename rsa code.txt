@@ -1,0 +1,221 @@
+import pandas as pd import numpy as np
+df = pd.read_csv('/content/sample_data/dataset.csv') df.head()
+df.describe() df.isnull().sum()
+df = df.drop_duplicates()
+dfchecking_status_mapping = {'<0': 0, '0<=X<200': 1, 'no checking': 2, '>=200':4}
+df['checking_status'] = df['checking_status'].replace(checking_status_mapping)
+credit_history_mapping = {'critical/other existing credit': 0, 'existing paid':1, 'delayed previously':2, 'no credits/all paid':3,'all paid':4}
+df['credit_history'] = df['credit_history'].replace(credit_history_mapping) savings_status_mapping = {'no known savings': 0, '<100': 1, '500<=X<1000': 2, '>=1000': 3,
+'100<=X<500': 4}
+df['savings_status'] = df['savings_status'].replace(savings_status_mapping) other_payment_plans_mapping = {'none': 0, 'bank': 1, 'stores':2}
+df['other_payment_plans'] = df['other_payment_plans'].replace(other_payment_plans_mapping) property_magnitude_mapping = {'real estate': 1, 'life insurance': 2, 'no known property': 0, 'car':3} df['property_magnitude'] = df['property_magnitude'].replace(property_magnitude_mapping) other_parties_mapping = {'none': 0, 'guarantor': 1, 'co-applicant': 2, 'co applicant':2} df['other_parties'] = df['other_parties'].replace(other_parties_mapping)
+personal_status_mapping = {'male single': 0, 'female div/dep/mar': 1, 'male div/sep': 2, 'male mar/wid':3}
+df['personal_status'] = df['personal_status'].replace(personal_status_mapping) employment_mapping = {'unemployed': 0, '>=7': 1, '1<=X<4': 2, '4<=X<7':3, '<1':4} df['employment'] = df['employment'].replace(employment_mapping) df['job'].unique()
+job_mapping = {'skilled': 1, 'unskilled resident': 0, 'high qualif/self emp/mgmt': 3,
+ 
+'unemp/unskilled non res': 1}
+df['job'] = df['job'].replace(job_mapping) df['housing'].unique()
+house_mapping = {'own': 1, 'rent': 0, 'for free':2} df['housing'] = df['housing'].replace(house_mapping) print(df['own_telephone'].unique()) print(df['foreign_worker'].unique()) print(df['class'].unique())
+own_telephone_mapping = {'yes': 1, 'none': 0}
+foreign_worker_mapping = {'yes': 1, 'no': 0}
+class_mapping = {'good': 1, 'bad': 0}
+df['own_telephone'] = df['own_telephone'].replace(own_telephone_mapping) df['foreign_worker'] = df['foreign_worker'].replace(foreign_worker_mapping) df['class'] = df['class'].replace(class_mapping)
+# df = df.drop('purpose', axis=1) # df = df.drop('age', axis=1)
+# print(df['checking_status'].unique()) # print(df['duration'].unique())
+# print(df['credit_history'].unique()) # print(df['credit_amount'].unique()) # print(df['savings_status'].unique())
+# print(df['installment_commitment'].unique()) # print(df['personal_status'].unique()) print(df['other_parties'].unique())
+# print(df['residence_since'].unique())
+# print(df['property_magnitude'].unique()) # print(df['other_payment_plans'].unique()) # print(df['existing_credits'].unique())
+# print(df['job'].unique())
+ 
+# print(df['num_dependents'].unique()) # print(df['own_telephone'].unique()) # print(df['foreign_worker'].unique()) # print(df['class'].unique())
+# print(df['employment'].unique())
+# print(df['housing'].unique())import seaborn as sns import matplotlib.pyplot as plt
+corr_matrix = df.corr() plt.figure(figsize=(12, 10))
+sns.heatmap(corr_matrix, annot=True, fmt=".2f", cmap='coolwarm', cbar=True, square=True, linewidths=.5)
+plt.title('Correlation Matrix') plt.show()
+class_corr = corr_matrix['class']
+class_corr_sorted = class_corr.sort_values(ascending=False) print("Features highly correlated with 'class':") print(class_corr_sorted)
+
+X = df.drop(columns=['class']) y = df['class']
+from sklearn.model_selection import train_test_splitX_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import confusion_matrix, classification_report, accuracy_score log_reg = LogisticRegression()
+log_reg.fit(X_train, y_train) y_pred_log_reg = log_reg.predict(X_test) print("Logistic Regression")
+print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred_log_reg))
+ 
+print("Classification Report:\n", classification_report(y_test, y_pred_log_reg)) print("Accuracy: ", accuracy_score(y_test, y_pred_log_reg))
+from sklearn.neighbors import KNeighborsClassifier knn = KNeighborsClassifier()
+knn.fit(X_train, y_train)
+y_pred_knn = knn.predict(X_test) print("K-Nearest Neighbors") print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred_knn)) print("Classification Report:\n", classification_report(y_test, y_pred_knn)) print("Accuracy:", accuracy_score(y_test, y_pred_knn))
+from sklearn.svm import SVC svm_linear = SVC(kernel='linear') svm_linear.fit(X_train, y_train)
+y_pred_svm_linear = svm_linear.predict(X_test) print("SVM with Linear Kernel")
+print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred_svm_linear)) print("Classification Report:\n", classification_report(y_test, y_pred_svm_linear)) print("Accuracy:", accuracy_score(y_test, y_pred_svm_linear))
+svm_rbf = SVC(kernel='rbf') svm_rbf.fit(X_train, y_train) y_pred_svm_rbf = svm_rbf.predict(X_test) print("SVM with RBF Kernel")
+print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred_svm_rbf)) print("Classification Report:\n", classification_report(y_test, y_pred_svm_rbf)) print("Accuracy:", accuracy_score(y_test, y_pred_svm_rbf))
+accuracies = {
+'Logistic Regression': accuracy_score(y_test, y_pred_log_reg), 'K-Nearest Neighbors': accuracy_score(y_test, y_pred_knn),
+'SVM with Linear Kernel': accuracy_score(y_test, y_pred_svm_linear), 'SVM with RBF Kernel': accuracy_score(y_test, y_pred_svm_rbf)
+ 
+}
+best_model = max(accuracies, key=accuracies.get)
+print(f"The model with the best accuracy is {best_model} with an accuracy of
+{accuracies[best_model]:.2f}") categorical_cols = [
+'checking_status', 'credit_history', 'savings_status',
+'employment', 'personal_status', 'other_parties', 'property_magnitude', 'other_payment_plans', 'housing', 'job', 'own_telephone', 'foreign_worker', 'class'
+]
+
+
+# categorical_cols=[ 'duration',	'credit_amount',	'installment_commitment', 'residence_since',
+#		'age',	'housing',	'existing_credits',	'job',	'num_dependents', 'own_telephone',
+#	'foreign_worker',	'class']
+numerical_cols = df.select_dtypes(include=['int64', 'float64']).columns.tolist() numerical_cols
+from sklearn.compose import ColumnTransformer from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, OneHotEncoder from sklearn.pipeline import Pipeline
+from sklearn.linear_model import LogisticRegression from sklearn.neighbors import KNeighborsClassifier from sklearn.svm import SVC
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
+
+
+# Remove duplicate records # df = df.drop_duplicates()
+
+# # Identify categorical and numerical columns
+ 
+# categorical_cols = [
+#	'duration', 'credit_amount',	'installment_commitment',	'residence_since', #		'age',	'housing',	'existing_credits',	'job',	'num_dependents',
+'own_telephone',
+#	'foreign_worker',	'class' # ]
+# numerical_cols = df.select_dtypes(include=['int64', 'float64']).columns.tolist()
+
+
+# Separate features and target variable X = df.drop('class', axis=1)
+y = df['class']
+
+
+# Preprocessing - Encoding and Scaling
+# Create a ColumnTransformer to apply different transformations to different columns preprocessor = ColumnTransformer(
+transformers=[
+('num', StandardScaler(), numerical_cols), ('cat', OneHotEncoder(), categorical_cols)
+])
+
+
+# Split the data into training and testing sets y
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+
+# Create a list to store models and their results models = [
+('Logistic Regression', LogisticRegression(max_iter=1000)), ('KNN', KNeighborsClassifier()),
+('SVM Linear', SVC(kernel='linear')),
+ 
+('SVM RBF', SVC(kernel='rbf'))
+]
+# Initialize a dictionary to store the results results = {}
+
+# Train and evaluate each model for name, model in models:
+# Create a pipeline with the preprocessor and the model
+clf = Pipeline(steps=[('preprocessor', preprocessor), ('classifier', model)])
+
+
+# Train the model clf.fit(X_train, y_train)
+
+# Predict the class for the test data y_pred = clf.predict(X_test)
+
+# Generate confusion matrix and classification report cm = confusion_matrix(y_test, y_pred)
+cr = classification_report(y_test, y_pred) acc = accuracy_score(y_test, y_pred)
+
+# Store the results print(name) print(cm) print(cr) print(acc)
+results[name] = {'confusion_matrix': cm, 'classification_report': cr, 'accuracy': acc}
+
+
+# Find the model with the best accuracy
+ 
+best_model = max(results, key=lambda x: results[x]['accuracy']) best_accuracy = results[best_model]['accuracy']
+
+# results,
+print("best model with best accuracy is: ") best_model, best_accuracy
+df.columns
+X = df.drop('class', axis=1)
+X = df[['duration',	'credit_amount',	'installment_commitment',	'residence_since', 'age',	'housing',	'existing_credits',	'job',	'num_dependents',
+'own_telephone', 'foreign_worker']]
+y = df.drop('class', axis=1) y = df['class']
+# Remove duplicate records df = df.drop_duplicates()
+
+# Identify categorical and numerical columns categorical_cols = [
+'duration',	'credit_amount',	'installment_commitment',	'residence_since',
+'age',	'housing',	'existing_credits',	'job',	'num_dependents', 'own_telephone',
+'foreign_worker', 'class'
+]
+numerical_cols = df.select_dtypes(include=['int64', 'float64']).columns.tolist()
+
+
+# Separate features and target variable
+X = df[['duration',	'credit_amount',	'installment_commitment',	'residence_since', 'age',	'housing',	'existing_credits',	'job',	'num_dependents',
+'own_telephone',
+ 
+'foreign_worker']] y = df['class']
+
+# Preprocessing - Encoding and Scaling
+# Create a ColumnTransformer to apply different transformations to different columns
+
+
+preprocessor = ColumnTransformer( transformers=[
+('num', StandardScaler(), numerical_cols), ('cat', OneHotEncoder(), categorical_cols)
+])
+# preprocessor = ColumnTransformer( #	transformers=[
+#  ('num', StandardScaler(), numerical_cols), # ('cat', OneHotEncoder(), categorical_cols) import pandas as pd
+from sklearn.compose import ColumnTransformer from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, OneHotEncoder from sklearn.pipeline import Pipeline
+from sklearn.linear_model import LogisticRegression from sklearn.neighbors import KNeighborsClassifier from sklearn.svm import SVC
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
+
+
+# Assuming df is your DataFrame # Remove duplicate records
+df = df.drop_duplicates()
+ 
+# Identify categorical and numerical columns
+categorical_cols = ['housing', 'job', 'own_telephone', 'foreign_worker']
+numerical_cols = ['duration', 'credit_amount', 'installment_commitment', 'residence_since', 'age', 'existing_credits', 'num_dependents']
+
+
+# Separate features and target variable X = df.drop('class', axis=1)
+y = df['class']
+
+
+# Preprocessing - Encoding and Scaling
+# Create a ColumnTransformer to apply different transformations to different columns preprocessor = ColumnTransformer(
+transformers=[
+('num', StandardScaler(), numerical_cols), ('cat', OneHotEncoder(), categorical_cols)
+])
+
+
+# Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+
+# Create a list to store models and their results models = [
+('Logistic Regression', LogisticRegression(max_iter=1000)), ('KNN', KNeighborsClassifier()),
+('SVM Linear', SVC(kernel='linear')), ('SVM RBF', SVC(kernel='rbf'))
+]
+
+
+# Initialize a dictionary to store the results
+ 
+results = {}
+
+
+# Train and evaluate each model for name, model in models:
+# Create a pipeline with the preprocessor and the model
+clf = Pipeline(steps=[('preprocessor', preprocessor), ('classifier', model)])
+
+
+# Train the model clf.fit(X_train, y_train)
+
+# Predict the class for the test data y_pred = clf.predict(X_test)
+
+# Generate confusion matrix and classification report cm = confusion_matrix(y_test, y_pred)
+cr = classification_report(y_test, y_pred) acc = accuracy_score(y_test, y_pred)
+
+# Store the results print(name) print(cm) print(cr) print(acc)
+results[name] = {'confusion_matrix': cm, 'classification_report': cr, 'accuracy': acc} # Find the model with the best accuracy
+best_model = max(results, key=lambda x: results[x]['accuracy']) best_accuracy = results[best_model]['accuracy']
+
+print("Best model with best accuracy is:", best_model, best_accuracy)
